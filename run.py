@@ -29,10 +29,16 @@ def read_sentences(iterable):
 # Computes (local) features for word at position |i| given that label for word
 # at position |i - 1| is |previous_label|. You can pass any additional data
 # via |data| argument.
-MIN_WORD_FREQUENCY = 5
-MIN_LABEL_FREQUENCY = 5
+MIN_WORD_FREQUENCY = 3
+MIN_LABEL_FREQUENCY = 4
 
 def compute_features(data, words, poses, i, previous_label):
+    if not (words[i][0] >= 'A' and words[i][0] <= 'Z'):
+        yield "was-labelled-as={0}".format("O")
+
+    if not poses[i] in ["N", "Int", "Art", "Prep", "Adj", "Adv", "Pron"]:
+        yield "was-labelled-as={0}".format("O")
+
     # Condition on previous label.
     if previous_label != "O":
         yield "label-previous={0}".format(previous_label) 
