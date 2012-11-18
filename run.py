@@ -35,23 +35,38 @@ MIN_WORD_FREQUENCY = 3
 MIN_LABEL_FREQUENCY = 4
 
 def compute_features(data, words, poses, i, previous_label):
-    if not words[i][0] in string.ascii_uppercase:
+    word = words[i]
+
+    # In test was words like 'hello-Vasya',
+    # we try to find 'Vasya' and work with it
+    if "-" in word:
+        for w in word.split("-"):
+            if len(w) > 0 and w[0] in string.ascii_uppercase:
+                word = w
+                break
+        else:
+            yield "was-labelled-as={0}".format("O")     
+
+    # Check for first letter
+    if not word[0] in string.ascii_uppercase:
         yield "was-labelled-as={0}".format("O")
 
+    # Check for part of speech
     if not poses[i] in ["N", "Int", "Art", "Prep", "Adj", "Adv"]:
         yield "was-labelled-as={0}".format("O")
 
-    if words[i].upper() == words[i]:
+    # Check for abbreviation
+    if word.upper() == word:
         yield "was-labelled-as={0}".format("B-MISC")
 
     # Condition on previous label.
     if previous_label != "O":
         yield "label-previous={0}".format(previous_label) 
 
-    if data["word_frequencies"].get(words[i], 0) >= MIN_WORD_FREQUENCY:
-        yield "word-current={0}".format(words[i])
+    if data["word_frequencies"].get(word, 0) >= MIN_WORD_FREQUENCY:
+        yield "word-current={0}".format(word)
 
-    labels = data["labelled_words"].get(words[i], dict())
+    labels = data["labelled_words"].get(word, dict())
     labels = filter(lambda item: item[1] > MIN_LABEL_FREQUENCY, labels.items())
 
     for label in labels:
