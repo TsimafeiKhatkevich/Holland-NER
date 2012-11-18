@@ -7,6 +7,8 @@ import itertools
 import operator
 import cPickle
 
+import string
+
 import maxent
 
 from collections import defaultdict
@@ -33,11 +35,14 @@ MIN_WORD_FREQUENCY = 3
 MIN_LABEL_FREQUENCY = 4
 
 def compute_features(data, words, poses, i, previous_label):
-    if not (words[i][0] >= 'A' and words[i][0] <= 'Z'):
+    if not words[i][0] in string.ascii_uppercase:
         yield "was-labelled-as={0}".format("O")
 
-    if not poses[i] in ["N", "Int", "Art", "Prep", "Adj", "Adv", "Pron"]:
+    if not poses[i] in ["N", "Int", "Art", "Prep", "Adj", "Adv"]:
         yield "was-labelled-as={0}".format("O")
+
+    if words[i].upper() == words[i]:
+        yield "was-labelled-as={0}".format("B-MISC")
 
     # Condition on previous label.
     if previous_label != "O":
