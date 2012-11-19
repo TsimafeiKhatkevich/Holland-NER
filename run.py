@@ -38,18 +38,18 @@ PREV_WORDS = dict({
 #    "over": ["B-PER"],
 #    "boven": ["B-LOC"],
 #    "tegen": ["B-LOC"],
-#    "op": ["B-LOC", "B-ORG"],
+    "op": ["B-LOC", "B-ORG"],
 #    "voor": ["B-PER", "B-ORG"],
 #    "tussen": ["B-PER"],
-#    "buiten": ["B-LOC"],
+    "buiten": ["B-LOC"],
 #    "door": ["B-PER", "B-ORG"],
-#    "tijdens": ["B-MISC"],
-#    "uit": ["B-LOC"],
-#    "van": ["B-PER", "B-ORG", "B-LOC"],
+    "tijdens": ["B-MISC"],
+    "uit": ["B-LOC"],
+#    "van": ["B-PER", "B-LOC", "B-ORG"],
     "in": ["B-LOC"],
-#    "aan": ["B-PER"],
-#    "met": ["B-PER", "B-ORG"],
-#    "volgens": ["B-PER"]
+    "aan": ["B-PER"],
+    "met": ["B-PER", "B-ORG"],
+    "volgens": ["B-PER"]
 })
 
 def compute_features(data, words, poses, i, previous_label):
@@ -83,11 +83,11 @@ def compute_features(data, words, poses, i, previous_label):
             yield "was-labelled-as={0}".format("B-MISC")
 
         # Check previous word
-        #for (pr_w, labs) in PREV_WORDS.items():
-        #    if not pr_w == prev_word.lower():
-        #        continue
-        #    for l in labs:
-        #        yield "was-labelled-as={0}".format(l)
+        for (pr_w, labs) in PREV_WORDS.items():
+            if not pr_w == prev_word.lower():
+                continue
+            for l in labs:
+                yield "was-labelled-as={0}".format(l)
 
         # Condition on previous label.
         if previous_label != "O":
