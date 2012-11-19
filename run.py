@@ -32,7 +32,7 @@ def read_sentences(iterable):
 # at position |i - 1| is |previous_label|. You can pass any additional data
 # via |data| argument.
 MIN_WORD_FREQUENCY = 3
-MIN_LABEL_FREQUENCY = 4
+MIN_LABEL_FREQUENCY = 10
 
 PREV_WORDS = dict({
 #    "over": ["B-PER"],
@@ -46,6 +46,7 @@ PREV_WORDS = dict({
     "tijdens": ["B-MISC"],
     "uit": ["B-LOC"],
 #    "van": ["B-PER", "B-LOC", "B-ORG"],
+    "naar": ["B-LOC"],
     "in": ["B-LOC"],
     "aan": ["B-PER"],
     "met": ["B-PER", "B-ORG"],
@@ -53,7 +54,6 @@ PREV_WORDS = dict({
 })
 
 PROOF_MARKERS = ["minister", "dokter", "president", "koning", "prins", "directeur", "en"]
-PROOF_MARKER_DIST = 4
 
 def is_up(word):
     return word[0] in string.ascii_uppercase
@@ -109,7 +109,6 @@ def compute_features(data, words, poses, i, previous_label):
         if uppers > 1 and downs > 0:
             yield "was-labelled-as={0}".format("I-MISC" if previous_label[0] == "B" else "B-MISC")
 
-
         # For titule + name + surname
         if marker_pos + 1 == i:
             yield "was-labelled-as={0}".format("B-PER")
@@ -119,6 +118,7 @@ def compute_features(data, words, poses, i, previous_label):
         # For titule + van + name + surname
         if marker_pos + 2 == i and p_word.lower() == "van":
             yield "was-labelled-as={0}".format("B-ORG")
+
         if marker_pos + 3 == i and is_up(p_word) and pp_word == "van":
             yield "was-labelled-as={0}".format("B-PER")
         if marker_pos + 4 == i and is_up(pp_word) and previous_label[0] == "B" and ppp_word == "van":
@@ -145,6 +145,18 @@ def compute_features(data, words, poses, i, previous_label):
         if poses[i - 1] == "Art" and previous_label == "O":
             yield "was-labelled-as={0}".format("B-MISC")
 
+        if poses[i] == "Adj":
+            yield "was-labelled-as={0}".format("B-MISC")
+
+        if word.endswith("ë"):
+            yield "was-labelled-as={0}".format("B-LOC")
+            
+
+#        if poses[i] == "Adv":
+#            yield "was-labelled-as={0}".format("I" + previous_label[1:] if previous_label[0] == "B" else "O")
+        if poses[i] == "Num":
+            yield "was-labelled-as={0}".format("I" + previous_label[1:] if previous_label[0] == "B" else "B-ORG")
+
         # Check previous word
         for (pr_w, labs) in PREV_WORDS.items():
             if not pr_w == p_word.lower():
@@ -155,8 +167,8 @@ def compute_features(data, words, poses, i, previous_label):
         labels = data["labelled_words"].get(word, dict())
         labels = filter(lambda item: item[1] > MIN_LABEL_FREQUENCY, labels.items())
 
-        for label in labels:
-            yield "was-labelled-as={0}".format(label)
+        #for label in labels:
+        #    yield "was-labelled-as={0}".format(label)
 
         if data["word_frequencies"].get(word, 0) >= MIN_WORD_FREQUENCY:
             yield "word-current={0}".format(word)
