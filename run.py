@@ -52,9 +52,25 @@ PREV_WORDS = dict({
     "volgens": ["B-PER"]
 })
 
+PROOF_MARKERS = ["minister", "dokter", "president", "koning", "prins", "directeur"]#"prinsesje"]
+PROOF_MARKER_DIST = 4
+
+def is_up(word):
+    return word[0] in string.ascii_uppercase
+
+def is_proof_marker(word):
+    for marker in PROOF_MARKERS:
+        if marker.endswith(word) or marker.startswith(word):
+            return True
+    return False
+
 def compute_features(data, words, poses, i, previous_label):
     prev_word = words[i - 1] if i > 0 else ""
     word = words[i]
+
+    marker_pos = data.get("proof_marker_pos", -1000)
+    if is_proof_marker(word.lower()):
+        marker_pos = i
 
     uppers, downs = 0, 0
     for letter in word:
@@ -69,14 +85,14 @@ def compute_features(data, words, poses, i, previous_label):
     if "-" in word:
         was_defis = True
         for w in word.split("-"):
-            if len(w) > 0 and w[0] in string.ascii_uppercase:
+            if len(w) > 0 and is_up(w):
                 word = w
                 break
         else:
             yield "was-labelled-as={0}".format("O")     
 
     # Check for first letter
-    if not word[0] in string.ascii_uppercase:
+    if not is_up(word):
         yield "was-labelled-as={0}".format("O")
     # ONLY IF UPPER LETTER
     else:
@@ -88,12 +104,18 @@ def compute_features(data, words, poses, i, previous_label):
         if uppers > 1 and downs > 0:
             yield "was-labelled-as={0}".format("I-MISC" if previous_label[0] == "B" else "B-MISC")
 
+        if marker_pos + 1 == i:
+            yield "was-labelled-as={0}".format("B-PER")
+
+        if marker_pos + 2 == i and previous_label == "B-PER":
+            yield "was-labelled-as={0}".format("I-PER")
+
         # For seases and towns
         if word.endswith("zee") or word.endswith("stad") or word.endswith("burg") or word.endswith("burgh"):
             yield "was-labelled-as={0}".format("I-LOC" if previous_label[0] == "B" else "B-LOC")
 
         if poses[i - 1] == "V" and previous_label == "O":
-            yield "was-labelled-as={0}".format("I-PER" if previous_label[0] == "B" else "B-PER")
+            yield "was-labelled-as={0}".format("B-PER")
 
         # Check for abbreviation
         if word.upper() == word:
@@ -103,7 +125,7 @@ def compute_features(data, words, poses, i, previous_label):
                 yield "was-labelled-as={0}".format("I-MISC" if previous_label[0] == "B" else "B-MISC")
 
         if poses[i - 1] == "Art" and previous_label == "O":
-            yield "was-labelled-as={0}".format("I-MISC" if previous_label[0] == "B" else "B-MISC")
+            yield "was-labelled-as={0}".format("B-MISC")
 
         # Check previous word
         for (pr_w, labs) in PREV_WORDS.items():
@@ -125,6 +147,8 @@ def compute_features(data, words, poses, i, previous_label):
         # Condition on previous label.
         if previous_label != "O":
             yield "label-previous={0}".format(previous_label)
+
+    data["proof_marker_pos"] = marker_pos
 
 
 # |iterable| should yield sentences.
