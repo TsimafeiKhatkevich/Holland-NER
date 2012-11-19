@@ -56,9 +56,18 @@ def compute_features(data, words, poses, i, previous_label):
     prev_word = words[i - 1] if i > 0 else ""
     word = words[i]
 
+    uppers, downs = 0, 0
+    for letter in word:
+        if letter in string.ascii_uppercase:
+            uppers = uppers + 1
+        else:
+            downs = downs + 1
+
     # In test was words like 'hello-Vasya',
     # we try to find 'Vasya' and work with it
+    was_defis = False
     if "-" in word:
+        was_defis = True
         for w in word.split("-"):
             if len(w) > 0 and w[0] in string.ascii_uppercase:
                 word = w
@@ -75,35 +84,48 @@ def compute_features(data, words, poses, i, previous_label):
         if not poses[i] in ["V", "N", "Int", "Art", "Prep", "Adj", "Adv"]:
             yield "was-labelled-as={0}".format("O")
 
-        if poses[i - 1] == "V" and previous_label == "O":
-            yield "was-labelled-as={0}".format("B-PER")
+        # Check for words with different cases 'AvsdA'
+        if uppers > 1 and downs > 0:
+            yield "was-labelled-as={0}".format("I-MISC" if previous_label[0] == "B" else "B-MISC")
 
-        if poses[i - 1] == "Art" and previous_label == "O":
-            yield "was-labelled-as={0}".format("B-MISC")
+        # For seases and towns
+        if word.endswith("zee") or word.endswith("stad") or word.endswith("burg") or word.endswith("burgh"):
+            yield "was-labelled-as={0}".format("I-LOC" if previous_label[0] == "B" else "B-LOC")
+
+        if poses[i - 1] == "V" and previous_label == "O":
+            yield "was-labelled-as={0}".format("I-PER" if previous_label[0] == "B" else "B-PER")
 
         # Check for abbreviation
         if word.upper() == word:
-            yield "was-labelled-as={0}".format("B-MISC")
+            if not was_defis:
+                yield "was-labelled-as={0}".format("I-ORG" if previous_label[0] == "B" else "B-ORG")
+            else:
+                yield "was-labelled-as={0}".format("I-MISC" if previous_label[0] == "B" else "B-MISC")
+
+        if poses[i - 1] == "Art" and previous_label == "O":
+            yield "was-labelled-as={0}".format("I-MISC" if previous_label[0] == "B" else "B-MISC")
 
         # Check previous word
         for (pr_w, labs) in PREV_WORDS.items():
             if not pr_w == prev_word.lower():
                 continue
             for l in labs:
+                only_o = False
                 yield "was-labelled-as={0}".format(l)
-
-        # Condition on previous label.
-        if previous_label != "O":
-            yield "label-previous={0}".format(previous_label)
-
-        if data["word_frequencies"].get(word, 0) >= MIN_WORD_FREQUENCY:
-            yield "word-current={0}".format(word)
 
         labels = data["labelled_words"].get(word, dict())
         labels = filter(lambda item: item[1] > MIN_LABEL_FREQUENCY, labels.items())
 
         for label in labels:
             yield "was-labelled-as={0}".format(label)
+
+        if data["word_frequencies"].get(word, 0) >= MIN_WORD_FREQUENCY:
+            yield "word-current={0}".format(word)
+
+        # Condition on previous label.
+        if previous_label != "O":
+            yield "label-previous={0}".format(previous_label)
+
 
 # |iterable| should yield sentences.
 # |iterable| should support multiple passes.
