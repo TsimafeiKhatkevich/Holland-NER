@@ -52,7 +52,7 @@ PREV_WORDS = dict({
     "volgens": ["B-PER"]
 })
 
-PROOF_MARKERS = ["minister", "dokter", "president", "koning", "prins", "directeur"]#"prinsesje"]
+PROOF_MARKERS = ["minister", "dokter", "president", "koning", "prins", "directeur", "en"]
 PROOF_MARKER_DIST = 4
 
 def is_up(word):
@@ -64,8 +64,13 @@ def is_proof_marker(word):
             return True
     return False
 
+def get_prev_word(words, i, back):
+    return words[i - back] if i >= back else ""
+
 def compute_features(data, words, poses, i, previous_label):
-    prev_word = words[i - 1] if i > 0 else ""
+    ppp_word = get_prev_word(words, i, 3)
+    pp_word = get_prev_word(words, i, 2)
+    p_word = get_prev_word(words, i, 1)
     word = words[i]
 
     marker_pos = data.get("proof_marker_pos", -1000)
@@ -104,11 +109,24 @@ def compute_features(data, words, poses, i, previous_label):
         if uppers > 1 and downs > 0:
             yield "was-labelled-as={0}".format("I-MISC" if previous_label[0] == "B" else "B-MISC")
 
+
+        # For titule + name + surname
         if marker_pos + 1 == i:
             yield "was-labelled-as={0}".format("B-PER")
-
         if marker_pos + 2 == i and previous_label == "B-PER":
             yield "was-labelled-as={0}".format("I-PER")
+        
+        # For titule + van + name + surname
+        if marker_pos + 2 == i and p_word.lower() == "van":
+            yield "was-labelled-as={0}".format("B-ORG")
+        if marker_pos + 3 == i and is_up(p_word) and pp_word == "van":
+            yield "was-labelled-as={0}".format("B-PER")
+        if marker_pos + 4 == i and is_up(pp_word) and previous_label[0] == "B" and ppp_word == "van":
+            yield "was-labelled-as={0}".format("I-PER")
+
+        # Start of sentense
+        if (p_word.strip() == "" or p_word == "--") and poses[i] == "N":
+            yield "was-labelled-as={0}".format("B-PER")
 
         # For seases and towns
         if word.endswith("zee") or word.endswith("stad") or word.endswith("burg") or word.endswith("burgh"):
@@ -129,10 +147,9 @@ def compute_features(data, words, poses, i, previous_label):
 
         # Check previous word
         for (pr_w, labs) in PREV_WORDS.items():
-            if not pr_w == prev_word.lower():
+            if not pr_w == p_word.lower():
                 continue
             for l in labs:
-                only_o = False
                 yield "was-labelled-as={0}".format(l)
 
         labels = data["labelled_words"].get(word, dict())
