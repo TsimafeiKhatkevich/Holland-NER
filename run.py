@@ -61,7 +61,7 @@ def compute_features(data, words, poses, i, previous_label):
 
     # Condition on previous label.
     if previous_label != "O":
-        yield "label-previous={0}".format(previous_label) 
+        yield "label-previous={0}".format(previous_label);
 
     if data["word_frequencies"].get(word, 0) >= MIN_WORD_FREQUENCY:
         yield "word-current={0}".format(word)
