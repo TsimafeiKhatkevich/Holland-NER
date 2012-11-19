@@ -65,7 +65,9 @@ def compute_features(data, words, poses, i, previous_label):
 
     # In test was words like 'hello-Vasya',
     # we try to find 'Vasya' and work with it
+    was_defis = False
     if "-" in word:
+        was_defis = True
         for w in word.split("-"):
             if len(w) > 0 and w[0] in string.ascii_uppercase:
                 word = w
@@ -86,7 +88,6 @@ def compute_features(data, words, poses, i, previous_label):
         if uppers > 1 and downs > 0:
             yield "was-labelled-as={0}".format("I-MISC" if previous_label[0] == "B" else "B-MISC")
 
-
         # For seases and towns
         if word.endswith("zee") or word.endswith("stad") or word.endswith("burg") or word.endswith("burgh"):
             yield "was-labelled-as={0}".format("I-LOC" if previous_label[0] == "B" else "B-LOC")
@@ -96,7 +97,10 @@ def compute_features(data, words, poses, i, previous_label):
 
         # Check for abbreviation
         if word.upper() == word:
-            yield "was-labelled-as={0}".format("I-ORG" if previous_label[0] == "B" else "B-ORG")
+            if not was_defis:
+                yield "was-labelled-as={0}".format("I-ORG" if previous_label[0] == "B" else "B-ORG")
+            else:
+                yield "was-labelled-as={0}".format("I-MISC" if previous_label[0] == "B" else "B-MISC")
 
         if poses[i - 1] == "Art" and previous_label == "O":
             yield "was-labelled-as={0}".format("I-MISC" if previous_label[0] == "B" else "B-MISC")
