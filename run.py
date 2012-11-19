@@ -37,7 +37,7 @@ MIN_LABEL_FREQUENCY = 4
 PREV_WORDS = dict({
 #    "over": ["B-PER"],
 #    "boven": ["B-LOC"],
-#    "tegen": ["B-LOC"],
+    "tegen": ["B-LOC", "B_PER"],
     "op": ["B-LOC", "B-ORG"],
 #    "voor": ["B-PER", "B-ORG"],
 #    "tussen": ["B-PER"],
@@ -69,14 +69,17 @@ def compute_features(data, words, poses, i, previous_label):
     # Check for first letter
     if not word[0] in string.ascii_uppercase:
         yield "was-labelled-as={0}".format("O")
-    else: # ONLY IF UPPER LETTER
-
+    # ONLY IF UPPER LETTER
+    else:
         # Check for part of speech
         if not poses[i] in ["V", "N", "Int", "Art", "Prep", "Adj", "Adv"]:
             yield "was-labelled-as={0}".format("O")
 
-        if poses[i - 1] == "V" and word[0] in string.ascii_uppercase and previous_label == "O":
+        if poses[i - 1] == "V" and previous_label == "O":
             yield "was-labelled-as={0}".format("B-PER")
+
+        if poses[i - 1] == "Art" and previous_label == "O":
+            yield "was-labelled-as={0}".format("B-MISC")
 
         # Check for abbreviation
         if word.upper() == word:
