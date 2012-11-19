@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 
 do_not_test=0
+evaluated="data/dutch.train.evaluated.txt"
+results="data/dutch.train.results.txt" 
+clean="data/dutch.train.clean.txt" 
 for var in "$@"
 do
     case "$var" in
@@ -11,8 +14,8 @@ done
 
 if (( $do_not_test == 0 ))
 then
-    ./run.sh -f data/dutch.train.clean.txt -c 5 -i 200 -g 3.5 -m dutch > data/dutch.train.evaluated.txt
+    ./run.sh -f data/dutch.train.clean.txt -c 5 -i 200 -g 3.5 -m dutch > $evaluated
 fi
 
-./get_info.py "data/dutch.train.evaluated.txt" "data/dutch.train.results.txt" "data/dutch.train.clean.txt"
+./get_info.py $evaluated $results $clean 
 
