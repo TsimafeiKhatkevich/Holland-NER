@@ -4,7 +4,7 @@ import sys
 
 LABELS = ("B-LOC", "B-MISC","B-ORG","B-PER", "I-LOC", "I-MISC","I-ORG","I-PER", "O")
 
-def print_table(data, output):
+def print_stats(data, output):
     output.write("<table border='1'>")
     output.write("<tr>")
     output.write("<th>-</th>")
@@ -18,13 +18,25 @@ def print_table(data, output):
 
         for cell in LABELS:
             output.write("<td>%d</td>" % data[(row, cell)])
-            
-
         output.write("</tr>")
 
-        
+    output.write("</table>")
+
+def print_mistakes(data, output):
+    output.write("<table border='1'>")
+    output.write("<tr>")
+    for i in ("i", "word", "answer", "correct"):
+        output.write("<th>%s</th>" % str(i))
+    output.write("</tr>")
+    
+    for row in data:
+        output.write("<tr>")
+        for cell in row:
+            output.write("<td>%s</td>" % str(cell))
+        output.write("</tr>")
 
     output.write("</table>")
+
 
 
 def main(result_name, answer_name, test):
@@ -49,11 +61,11 @@ def main(result_name, answer_name, test):
         if p[0] != p[1]:
             incorrect.append(tuple([i, words[i], p[0], p[1]]))
 
-    with open("results", "w+") as output:
-        output.write(str(incorrect))
+    with open("mistakes.html", "w+") as output:
+        print_mistakes(incorrect, output)
 
     with open("table.html", "w+") as output:
-        print_table(stat, output)
+        print_stats(stat, output)
 
 
 if __name__ == '__main__':
