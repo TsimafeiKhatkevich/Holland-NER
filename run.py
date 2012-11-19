@@ -34,6 +34,24 @@ def read_sentences(iterable):
 MIN_WORD_FREQUENCY = 3
 MIN_LABEL_FREQUENCY = 4
 
+PREV_WORDS = dict({
+#    "over": ["B-PER"],
+#    "boven": ["B-LOC"],
+#    "tegen": ["B-LOC"],
+#    "op": ["B-LOC", "B-ORG"],
+#    "voor": ["B-PER", "B-ORG"],
+#    "tussen": ["B-PER"],
+#    "buiten": ["B-LOC"],
+#    "door": ["B-PER", "B-ORG"],
+#    "tijdens": ["B-MISC"],
+#    "uit": ["B-LOC"],
+#    "van": ["B-PER", "B-ORG", "B-LOC"],
+    "in": ["B-LOC"],
+#    "aan": ["B-PER"],
+#    "met": ["B-PER", "B-ORG"],
+#    "volgens": ["B-PER"]
+})
+
 def compute_features(data, words, poses, i, previous_label):
     prev_word = words[i - 1] if i > 0 else ""
     word = words[i]
@@ -56,9 +74,19 @@ def compute_features(data, words, poses, i, previous_label):
     if not poses[i] in ["N", "Int", "Art", "Prep", "Adj", "Adv"]:
         yield "was-labelled-as={0}".format("O")
 
+    if poses[i - 1] == "V" and word[0] in string.ascii_uppercase and previous_label == "O":
+        yield "was-labelled-as={0}".format("B-PER")
+
     # Check for abbreviation
     if word.upper() == word:
         yield "was-labelled-as={0}".format("B-MISC")
+
+    # Check previous word
+    #for (pr_w, labs) in PREV_WORDS.items():
+    #    if not pr_w == prev_word.lower():
+    #        continue
+    #    for l in labs:
+    #        yield "was-labelled-as={0}".format(l)
 
     # Condition on previous label.
     if previous_label != "O":
