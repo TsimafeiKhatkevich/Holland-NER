@@ -56,6 +56,13 @@ def compute_features(data, words, poses, i, previous_label):
     prev_word = words[i - 1] if i > 0 else ""
     word = words[i]
 
+    uppers, downs = 0, 0
+    for letter in word:
+        if letter in string.ascii_uppercase:
+            uppers = uppers + 1
+        else:
+            downs = downs + 1
+
     # In test was words like 'hello-Vasya',
     # we try to find 'Vasya' and work with it
     if "-" in word:
@@ -75,18 +82,24 @@ def compute_features(data, words, poses, i, previous_label):
         if not poses[i] in ["V", "N", "Int", "Art", "Prep", "Adj", "Adv"]:
             yield "was-labelled-as={0}".format("O")
 
+        # Check for words with different cases 'AvsdA'
+        if uppers > 1 and downs > 0:
+            yield "was-labelled-as={0}".format("I-MISC" if previous_label[0] == "B" else "B-MISC")
+
+
+        # For seases and towns
         if word.endswith("zee") or word.endswith("stad") or word.endswith("burg") or word.endswith("burgh"):
             yield "was-labelled-as={0}".format("I-LOC" if previous_label[0] == "B" else "B-LOC")
 
         if poses[i - 1] == "V" and previous_label == "O":
-            yield "was-labelled-as={0}".format("B-PER")
-
-        if poses[i - 1] == "Art" and previous_label == "O":
-            yield "was-labelled-as={0}".format("B-MISC")
+            yield "was-labelled-as={0}".format("I-PER" if previous_label[0] == "B" else "B-PER")
 
         # Check for abbreviation
         if word.upper() == word:
-            yield "was-labelled-as={0}".format("B-ORG")
+            yield "was-labelled-as={0}".format("I-ORG" if previous_label[0] == "B" else "B-ORG")
+
+        if poses[i - 1] == "Art" and previous_label == "O":
+            yield "was-labelled-as={0}".format("I-MISC" if previous_label[0] == "B" else "B-MISC")
 
         # Check previous word
         for (pr_w, labs) in PREV_WORDS.items():
