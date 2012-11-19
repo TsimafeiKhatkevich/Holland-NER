@@ -38,6 +38,9 @@ def print_mistakes(data, output):
     output.write("</table>")
 
 
+def row_cmp(a, b):
+    return cmp(a[3],b[3]) or cmp(a[1], b[1]) 
+
 
 def main(result_name, answer_name, test):
 
@@ -60,6 +63,9 @@ def main(result_name, answer_name, test):
         stat[p] += 1
         if p[0] != p[1]:
             incorrect.append(tuple([i, words[i], p[0], p[1]]))
+
+    incorrect.sort(row_cmp)
+
 
     with open("mistakes.html", "w+") as output:
         print_mistakes(incorrect, output)
